@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>习概题库 - 复习系统</title>
+<meta name="description" content="习近平新时代中国特色社会主义思想概论题库复习系统">
+<meta name="theme-color" content="#c41e1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="习概题库">
+<link rel="manifest" href="manifest.json">
+<style>
+:root {
+  --bg: #f5f3ef; --card: #ffffff; --primary: #c41e1e;
+  --primary-light: #fce4e4; --text: #2c2c2c; --text-secondary: #666;
+  --border: #e0dcd5; --accent: #b8860b; --success: #2e7d32;
+  --success-bg: #e8f5e9; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --radius: 8px;
+  --font-cn: 'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-cn); background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 960px; margin: 0 auto; padding: 16px; }
+
+.header {
+  background: linear-gradient(135deg, #c41e1e 0%, #8b0000 100%);
+  color: white; padding: 20px 0; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 10;
+}
+.header h1 { font-size: 1.4em; font-weight: 700; margin-bottom: 2px; }
+.header p { font-size: 0.85em; opacity: 0.9; }
+
+.stats-bar {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 14px; margin: 12px 0;
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 0.85em;
+}
+.stats-bar .stat { font-weight: 600; color: var(--primary); }
+.stats-bar .stat span { color: var(--text-secondary); font-weight: 400; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; flex: 1; min-width: 80px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--success); border-radius: 2px; transition: width 0.3s; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; align-items: center; }
+.controls select, .controls button, .btn {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--card); font-size: 0.85em; cursor: pointer; font-family: var(--font-cn);
+  transition: all 0.15s;
+}
+.controls select:hover, .controls button:hover, .btn:hover { border-color: var(--primary); }
+.btn-primary { background: var(--primary); color: white; border-color: var(--primary); font-weight: 600; }
+.btn-primary:hover { background: #a01818; }
+.btn-accent { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+.btn-accent:hover { background: #9a7209; }
+.btn-outline { background: var(--card); color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: var(--primary-light); }
+.btn-danger { background: #fff; color: #c62828; border: 1px solid #c62828; }
+.btn-danger:hover { background: #ffebee; }
+
+.chapter-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.chapter-tag {
+  padding: 4px 10px; border-radius: 14px; background: var(--card);
+  border: 1px solid var(--border); font-size: 0.8em; cursor: pointer;
+  transition: all 0.15s; font-family: var(--font-cn); white-space: nowrap;
+}
+.chapter-tag:hover { border-color: var(--primary); }
+.chapter-tag.active { background: var(--primary); color: white; border-color: var(--primary); }
+.chapter-tag.no-ans-tag { border-color: #e65100; color: #e65100; }
+.chapter-tag.no-ans-tag.active { background: #e65100; color: white; border-color: #e65100; }
+
+.submit-bar {
+  background: #fff8e1; border: 2px solid var(--accent); border-radius: var(--radius);
+  padding: 12px 16px; margin: 14px 0; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.submit-bar .hint { font-size: 0.85em; color: var(--accent); font-weight: 600; }
+
+.question-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; margin: 8px 0; box-shadow: var(--shadow); transition: box-shadow 0.2s;
+}
+.question-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+.question-card.submitted-correct { border-left: 3px solid var(--success); background: #f9fdf9; }
+.question-card.submitted-incorrect { border-left: 3px solid #c62828; background: #fffafa; }
+.question-card.no-answer { border-left: 3px solid #e65100; }
+
+.q-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 4px; }
+.q-number { font-weight: 700; color: var(--primary); font-size: 0.85em; white-space: nowrap; }
+.q-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.q-chapter { font-size: 0.75em; color: var(--text-secondary); background: var(--primary-light); padding: 1px 7px; border-radius: 10px; }
+.q-type { font-size: 0.75em; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+.q-type.single { background: #e3f2fd; color: #1565c0; }
+.q-type.multi { background: #fff3e0; color: #e65100; }
+.q-type.short, .q-type.essay { background: #f3e5f5; color: #7b1fa2; }
+
+.ai-badge { font-size: 0.7em; background: #e8f5e9; color: #2e7d32; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+.no-ans-badge { font-size: 0.7em; background: #fff3e0; color: #e65100; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+.submitted-badge { font-size: 0.7em; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+.submitted-badge.correct { background: var(--success-bg); color: var(--success); }
+.submitted-badge.incorrect { background: #ffebee; color: #c62828; }
+
+.q-stem { font-size: 0.92em; margin: 6px 0; line-height: 1.7; }
+
+.options-list { list-style: none; margin: 6px 0; }
+.option-item {
+  padding: 6px 10px; margin: 2px 0; border-radius: 4px; cursor: pointer;
+  transition: background 0.15s; border: 1px solid transparent; font-size: 0.88em;
+  user-select: none;
+}
+.option-item:hover { background: #faf9f6; border-color: var(--border); }
+.option-item.selected { background: #e3f2fd; border-color: #1565c0; font-weight: 600; }
+.option-item.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); font-weight: 600; }
+.option-item.incorrect { background: #ffebee; border-color: #c62828; color: #c62828; }
+.option-item.submitted-disabled { cursor: default; opacity: 0.85; }
+.option-label { font-weight: 700; margin-right: 5px; }
+
+.answer-reveal {
+  margin-top: 8px; padding: 10px 14px; border-radius: var(--radius); display: none;
+  font-size: 0.88em;
+}
+.answer-reveal.show { display: block; }
+.answer-reveal.correct-result { background: var(--success-bg); border-left: 3px solid var(--success); }
+.answer-reveal.wrong-result { background: #fff3e0; border-left: 3px solid var(--accent); }
+.answer-reveal.info-result { background: #f5f5f5; border-left: 3px solid #999; }
+
+.kp-section {
+  margin-top: 6px; padding: 8px 14px; background: #faf9f6; border-radius: var(--radius);
+  font-size: 0.82em; border-left: 3px solid var(--accent); display: none;
+}
+.kp-section.show { display: block; }
+.kp-section strong { color: var(--accent); }
+
+.text-answer-box {
+  width: 100%; min-height: 70px; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 8px; font-size: 0.88em; font-family: var(--font-cn); resize: vertical; margin: 6px 0;
+}
+.text-answer-box:focus { outline: none; border-color: var(--primary); }
+.text-answer-box[readonly] { background: #f9f9f9; }
+
+/* Memo panel */
+.memo-panel {
+  background: var(--card); border: 2px solid var(--accent); border-radius: var(--radius);
+  padding: 18px; margin: 16px 0; display: none;
+}
+.memo-panel.show { display: block; }
+.memo-panel h2 { color: var(--accent); margin-bottom: 10px; font-size: 1.1em; }
+.memo-panel h3 { color: var(--primary); margin: 12px 0 6px; font-size: 0.95em; }
+.memo-item {
+  padding: 3px 0 3px 10px; border-left: 2px solid var(--border); margin: 3px 0; font-size: 0.85em;
+}
+.memo-item.star { border-left-color: var(--primary); background: var(--primary-light); padding: 5px 10px; border-radius: 0 6px 6px 0; }
+
+@media (max-width: 768px) {
+  body { font-size: 15px; }
+  .header { padding: 14px 0; }
+  .header h1 { font-size: 1.15em; }
+  .header p { font-size: 0.78em; }
+  .container { padding: 4px; }
+  .question-card { padding: 10px 8px; margin: 5px 0; }
+  .q-stem { font-size: 0.9em; }
+  .controls { flex-direction: column; align-items: stretch; gap: 4px; }
+  .controls select, .controls button, .btn {
+    padding: 10px 12px; font-size: 0.9em;
+    min-height: 42px; /* Better touch targets */
+  }
+  .submit-bar { flex-direction: column; align-items: stretch; padding: 10px 12px; }
+  .submit-bar .hint { font-size: 0.82em; }
+  .option-item {
+    padding: 10px 10px; margin: 3px 0; font-size: 0.9em;
+    min-height: 42px; display: flex; align-items: center;
+  }
+  .chapter-tags { gap: 4px; }
+  .chapter-tag { padding: 6px 12px; font-size: 0.82em; min-height: 34px; display: inline-flex; align-items: center; }
+  .stats-bar { font-size: 0.78em; gap: 8px; padding: 8px 10px; }
+  .q-header { font-size: 0.82em; }
+  .q-badges { gap: 3px; }
+  .q-chapter { font-size: 0.7em; }
+  .q-type { font-size: 0.7em; }
+  /* Make textarea bigger on mobile for easier input */
+  .text-answer-box { min-height: 100px; font-size: 0.9em; }
+  /* Sticky header more compact on mobile */
+  .header { position: sticky; top: 0; z-index: 10; }
+}
+
+/* Phone-specific (< 480px) */
+@media (max-width: 480px) {
+  body { font-size: 14px; }
+  .header h1 { font-size: 1.05em; }
+  .header { padding: 10px 0; }
+  .container { padding: 2px; }
+  .question-card { padding: 8px 6px; border-radius: 6px; }
+  .stats-bar { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .option-item { padding: 12px 8px; min-height: 44px; }
+  .option-label { margin-right: 6px; }
+}
+
+/* Tablet improvements (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container { max-width: 720px; padding: 12px; }
+  .option-item { min-height: 40px; padding: 8px 12px; }
+  .controls select, .controls button, .btn { min-height: 38px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>习近平新时代中国特色社会主义思想概论</h1>
+  <p>题库复习系统 — 导论至第七章 + 综合练习题 | 共 <span id="headerTotal">0</span> 题</p>
+</div>
+
+<div class="container">
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat" id="statTotal">0 <span>道题</span></div>
+    <div class="stat" id="statDone">0 <span>已答</span></div>
+    <div class="stat" id="statCorrect">0 <span>正确</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="stat"><span id="statPercent">0%</span></div>
+  </div>
+
+  <div class="controls">
+    <select id="chapterSelect" onchange="selectChapter(this.value)">
+      <option value="all">全部章节</option>
+    </select>
+    <select id="typeSelect" onchange="applyFilters()">
+      <option value="all">全部题型</option>
+      <option value="single">单选题</option>
+      <option value="multi">多选题</option>
+      <option value="short">简答题</option>
+      <option value="essay">论述题</option>
+    </select>
+    <select id="sortSelect" onchange="applyFilters()">
+      <option value="chapter">按章节排序</option>
+      <option value="random">随机排序</option>
+      <option value="unanswered">未答题优先</option>
+    </select>
+    <button onclick="showMemoPanel()" class="btn btn-outline">背诵知识点</button>
+    <button onclick="resetAll()" class="btn btn-danger">重置全部进度</button>
+  </div>
+
+  <div class="chapter-tags" id="chapterTags"></div>
+
+  <div id="questionList"></div>
+
+  <div class="memo-panel" id="memoPanel">
+    <h2>期末背诵知识点总结</h2>
+    <div id="memoContent"></div>
+  </div>
+</div>
+
+<script src="questions_data.js"></script>
+<script>
+// ========== STATE ==========
+let userAnswers = {};       // {qid: {answer, status, chapter}}
+let submittedChapters = {};  // {chapterName: true}
+let currentChapter = 'all';
+let filteredQuestions = [];
+
+const STORAGE_KEY = 'xg_bank_progress_v2';
+
+// ========== INIT ==========
+function init() {
+  loadProgress();
+  buildChapterSelect();
+  buildChapterTags();
+  document.getElementById('headerTotal').textContent = QUESTIONS_DATA.length;
+  applyFilters();
+}
+
+function loadProgress() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      userAnswers = data.userAnswers || {};
+      submittedChapters = data.submittedChapters || {};
+    }
+  } catch(e) {}
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      userAnswers, submittedChapters
+    }));
+  } catch(e) {}
+}
+
+function buildChapterSelect() {
+  const seen = new Set();
+  const chapters = [];
+  QUESTIONS_DATA.forEach(q => { if (!seen.has(q.chapter)) { seen.add(q.chapter); chapters.push(q.chapter); } });
+  const sel = document.getElementById('chapterSelect');
+  chapters.forEach(ch => {
+    const opt = document.createElement('option');
+    opt.value = ch;
+    opt.textContent = ch.length > 10 ? ch : ch;
+    sel.appendChild(opt);
+  });
+}
+
+function buildChapterTags() {
+  const seen = new Set();
+  const chapters = [];
+  QUESTIONS_DATA.forEach(q => { if (!seen.has(q.chapter)) { seen.add(q.chapter); chapters.push(q.chapter); } });
+  const container = document.getElementById('chapterTags');
+  let html = '<span class="chapter-tag active" onclick="selectChapter(\'all\')" id="tag-all">全部</span>';
+  chapters.forEach(ch => {
+    html += '<span class="chapter-tag" onclick="selectChapter(\'' + escJs(ch) + '\')" id="tag-' + escAttr(ch) + '">' + escHtml(ch) + '</span>';
+  });
+  // Add "无答案题库" tag
+  const noAnsCount = QUESTIONS_DATA.filter(q => !q.answer || q.answer === '').length;
+  if (noAnsCount > 0) {
+    html += '<span class="chapter-tag no-ans-tag" onclick="selectChapter(\'__no_answer__\')" id="tag-__no_answer__">待补充答案 (' + noAnsCount + ')</span>';
+  }
+  container.innerHTML = html;
+}
+
+function selectChapter(ch) {
+  currentChapter = ch;
+  document.querySelectorAll('.chapter-tag').forEach(t => t.classList.remove('active'));
+  const tag = document.getElementById('tag-' + escAttr(ch));
+  if (tag) tag.classList.add('active');
+  else document.getElementById('tag-all').classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const type = document.getElementById('typeSelect').value;
+  const sort = document.getElementById('sortSelect').value;
+
+  let qs = [...QUESTIONS_DATA];
+
+  if (currentChapter === '__no_answer__') {
+    qs = qs.filter(q => !q.answer || q.answer === '');
+  } else if (currentChapter !== 'all') {
+    qs = qs.filter(q => q.chapter === currentChapter);
+  }
+  if (type !== 'all') qs = qs.filter(q => q.type === type);
+
+  if (sort === 'chapter') {
+    qs.sort((a,b) => {
+      const ca = chOrder(a.chapter), cb = chOrder(b.chapter);
+      if (ca !== cb) return ca - cb;
+      const to = {single:1,multi:2,short:3,essay:4};
+      if (to[a.type] !== to[b.type]) return to[a.type] - to[b.type];
+      return a.id - b.id;
+    });
+  } else if (sort === 'random') {
+    for (let i = qs.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [qs[i],qs[j]]=[qs[j],qs[i]]; }
+  } else if (sort === 'unanswered') {
+    qs.sort((a,b) => {
+      const ad = !!userAnswers[a.id], bd = !!userAnswers[b.id];
+      if (ad !== bd) return ad - bd;
+      return a.id - b.id;
+    });
+  }
+
+  filteredQuestions = qs;
+  renderQuestions();
+  updateStats();
+}
+
+function chOrder(ch) {
+  if (ch.includes('导论')) return 0;
+  const m = ch.match(/第([一二三四五六七八九十]+)章/);
+  if (m) {
+    const map = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
+    return map[m[1]] || 99;
+  }
+  if (ch.includes('综合')) return 100;
+  return 99;
+}
+
+function getTypeLabel(type) {
+  return {single:'单选题', multi:'多选题', short:'简答题', essay:'论述题'}[type] || type;
+}
+
+// ========== RENDER ==========
+function renderQuestions() {
+  const container = document.getElementById('questionList');
+  let html = '';
+
+  if (filteredQuestions.length === 0) {
+    html = '<p style="text-align:center;padding:40px;color:#999;">没有匹配的题目</p>';
+    container.innerHTML = html;
+    return;
+  }
+
+  // Show chapter submit button if a specific chapter is selected (not 'all', not '__no_answer__')
+  if (currentChapter !== 'all' && currentChapter !== '__no_answer__') {
+    const isSubmitted = submittedChapters[currentChapter];
+    html += '<div class="submit-bar">';
+    if (isSubmitted) {
+      html += '<span class="hint">本章已提交，下方显示所有答案和解析</span>';
+      html += '<button class="btn btn-outline" onclick="unsubmitChapter()">撤销提交（重新答题）</button>';
+    } else {
+      const answeredInChapter = filteredQuestions.filter(q => !!userAnswers[q.id]).length;
+      html += '<span class="hint">已选 ' + answeredInChapter + '/' + filteredQuestions.length + ' 题，答题完毕后点击提交</span>';
+      html += '<button class="btn btn-accent" onclick="submitChapter()">提交本章答案</button>';
+    }
+    html += '</div>';
+  }
+
+  let isAnySubmitted = false;
+  let firstSubmittedQ = null;
+
+  filteredQuestions.forEach(q => {
+    const ua = userAnswers[q.id];
+    const chSubmitted = submittedChapters[q.chapter];
+    const isSubmitted = !!chSubmitted;
+    if (isSubmitted && !isAnySubmitted) { isAnySubmitted = true; firstSubmittedQ = q; }
+    const typeLabel = getTypeLabel(q.type);
+    const hasAnswer = q.answer && q.answer !== '';
+    const isAiAnswer = q.answerSource === 'ai';
+    const chShort = q.chapter.replace('新时代坚持和发展中国特色社会主义','第一章')
+      .replace('以中国式现代化全面推进中华民族伟大复兴','第二章')
+      .replace('坚持党的全面领导','第三章')
+      .replace('坚持以人民为中心','第四章')
+      .replace('全面深化改革开放','第五章')
+      .replace('推动高质量发展','第六章')
+      .replace('教育、科技、人才战略','第七章');
+
+    // Determine card class
+    let cardCls = 'question-card';
+    if (!hasAnswer) cardCls += ' no-answer';
+    if (isSubmitted && ua) {
+      cardCls += ua.status === 'correct' ? ' submitted-correct' : ' submitted-incorrect';
+    }
+
+    html += '<div class="' + cardCls + '" id="q-' + q.id + '">';
+
+    // Header
+    html += '<div class="q-header">';
+    html += '<span class="q-number">#' + q.id + '</span>';
+    html += '<div class="q-badges">';
+    html += '<span class="q-type ' + q.type + '">' + typeLabel + '</span>';
+    if (isAiAnswer) html += '<span class="ai-badge">AI补充</span>';
+    if (!hasAnswer) html += '<span class="no-ans-badge">暂无答案</span>';
+    if (isSubmitted && ua && ua.status === 'correct') html += '<span class="submitted-badge correct">正确</span>';
+    if (isSubmitted && ua && ua.status === 'incorrect') html += '<span class="submitted-badge incorrect">错误</span>';
+    html += '<span class="q-chapter">' + escHtml(chShort) + '</span>';
+    html += '</div></div>';
+
+    // Stem
+    html += '<div class="q-stem">' + escHtml(q.stem) + '</div>';
+
+    // Options for single/multi
+    if (q.type === 'single' && q.options.length > 0) {
+      html += '<div class="options-list">';
+      const labels = ['A','B','C','D','E','F','G','H'];
+      q.options.forEach((opt, idx) => {
+        let cls = 'option-item';
+        if (isSubmitted) cls += ' submitted-disabled';
+        if (isSubmitted && hasAnswer) {
+          const correctIdx = parseInt(q.answer);
+          if (idx === correctIdx) cls += ' correct';
+          if (ua && ua.answer !== '' && parseInt(ua.answer) === idx && idx !== correctIdx) cls += ' incorrect';
+        } else if (ua && parseInt(ua.answer) === idx) {
+          cls += ' selected';
+        }
+        const clickHandler = isSubmitted ? '' : ' onclick="selectSingle(' + q.id + ',' + idx + ')"';
+        html += '<div class="' + cls + '"' + clickHandler + '><span class="option-label">' + labels[idx] + '.</span>' + escHtml(opt) + '</div>';
+      });
+      html += '</div>';
+    } else if (q.type === 'multi' && q.options.length > 0) {
+      html += '<div class="options-list">';
+      const labels = ['A','B','C','D','E','F','G','H'];
+      const userSel = (ua && ua.answer) ? ua.answer.split(',').map(x => parseInt(x)) : [];
+      const correctIdx = hasAnswer ? q.answer.split(',').map(x => parseInt(x)) : [];
+      q.options.forEach((opt, idx) => {
+        let cls = 'option-item';
+        if (isSubmitted) cls += ' submitted-disabled';
+        if (isSubmitted && hasAnswer) {
+          if (correctIdx.includes(idx)) cls += ' correct';
+          if (ua && userSel.includes(idx) && !correctIdx.includes(idx)) cls += ' incorrect';
+        } else if (userSel.includes(idx)) {
+          cls += ' selected';
+        }
+        const clickHandler = isSubmitted ? '' : ' onclick="selectMulti(' + q.id + ',' + idx + ')"';
+        html += '<div class="' + cls + '"' + clickHandler + '><span class="option-label">' + labels[idx] + '.</span>' + escHtml(opt) + '</div>';
+      });
+      html += '</div>';
+    } else if (q.type === 'short' || q.type === 'essay') {
+      const readonly = isSubmitted ? ' readonly' : '';
+      const val = (ua && ua.answer) ? escHtml(ua.answer) : '';
+      html += '<textarea class="text-answer-box" id="text-' + q.id + '" placeholder="输入你的答案..."' + readonly + '>' + val + '</textarea>';
+      if (!isSubmitted) {
+        html += '<button class="btn btn-primary" onclick="saveTextAnswer(' + q.id + ')" style="margin-top:4px;">保存草稿</button>';
+      }
+    }
+
+    // Answer reveal after submission
+    if (isSubmitted) {
+      let revealCls = 'answer-reveal show ';
+      if (!hasAnswer) {
+        revealCls += 'info-result';
+      } else if (ua && ua.status === 'correct') {
+        revealCls += 'correct-result';
+      } else if (ua && ua.status === 'incorrect') {
+        revealCls += 'wrong-result';
+      } else {
+        revealCls += 'info-result';
+      }
+      html += '<div class="' + revealCls + '">';
+      html += '<strong>标准答案：</strong>' + formatAnswer(q);
+      if (q.type === 'short' || q.type === 'essay') {
+        if (ua && ua.answer) {
+          html += '<br><strong>你的答案：</strong>' + escHtml(ua.answer).replace(/\n/g, '<br>');
+        }
+      }
+      if (isAiAnswer) html += '<br><span style="color:#2e7d32;font-size:0.85em;">（本题答案为AI补充，仅供参考）</span>';
+      if (!hasAnswer) html += '<br><span style="color:#e65100;font-size:0.85em;">（本题暂无答案，等待补充）</span>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+  });
+
+  // If chapter is submitted, show KP once at the end
+  if (isAnySubmitted && firstSubmittedQ && firstSubmittedQ.explanation) {
+    html += '<div class="kp-section show" style="margin:16px 0;padding:14px 18px;background:#faf9f6;border:1px solid var(--accent);border-radius:var(--radius);">';
+    html += '<strong style="color:var(--accent);">本章核心知识点：</strong><br>' + firstSubmittedQ.explanation.replace(/\n/g, '<br>') + '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function escAttr(str) {
+  return str.replace(/['"<>&]/g, '').replace(/\s+/g, '_');
+}
+function escJs(str) {
+  return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function formatAnswer(q) {
+  if (!q.answer || q.answer === '') return '（暂无参考答案）';
+  if ((q.type === 'single') && q.options.length > 0) {
+    const idx = parseInt(q.answer);
+    if (idx >= 0 && idx < q.options.length) {
+      return String.fromCharCode(65+idx) + '. ' + escHtml(q.options[idx]);
+    }
+    return q.answer;
+  }
+  if (q.type === 'multi' && q.options.length > 0) {
+    const indices = q.answer.split(',').map(x => parseInt(x)).filter(x => !isNaN(x));
+    return indices.map(i => String.fromCharCode(65+i) + '. ' + escHtml(q.options[i] || '')).join('<br>') || q.answer;
+  }
+  return escHtml(q.answer).replace(/\n/g, '<br>');
+}
+
+// ========== ANSWER LOGIC ==========
+function selectSingle(qid, idx) {
+  const q = QUESTIONS_DATA.find(q => q.id === qid);
+  if (!q) return;
+  if (submittedChapters[q.chapter]) return;
+
+  userAnswers[qid] = {answer: String(idx), status: 'selected', chapter: q.chapter};
+  saveProgress();
+  renderQuestions();
+  updateStats();
+}
+
+function selectMulti(qid, idx) {
+  const q = QUESTIONS_DATA.find(q => q.id === qid);
+  if (!q) return;
+  if (submittedChapters[q.chapter]) return;
+
+  let ua = userAnswers[qid];
+  if (!ua || ua.status !== 'selected') {
+    ua = {answer: '', status: 'selected', chapter: q.chapter};
+  }
+  const sel = ua.answer ? ua.answer.split(',').map(x => parseInt(x)) : [];
+  const pos = sel.indexOf(idx);
+  if (pos >= 0) sel.splice(pos, 1);
+  else sel.push(idx);
+  ua.answer = sel.join(',');
+  userAnswers[qid] = ua;
+  saveProgress();
+  renderQuestions();
+  updateStats();
+}
+
+function saveTextAnswer(qid) {
+  const q = QUESTIONS_DATA.find(q => q.id === qid);
+  if (!q) return;
+  if (submittedChapters[q.chapter]) return;
+
+  const el = document.getElementById('text-' + qid);
+  if (!el) return;
+  userAnswers[qid] = {answer: el.value.trim(), status: 'selected', chapter: q.chapter};
+  saveProgress();
+  updateStats();
+  // Briefly show "saved" feedback
+  el.style.borderColor = '#2e7d32';
+  setTimeout(() => { el.style.borderColor = ''; }, 1000);
+}
+
+function submitChapter() {
+  if (currentChapter === 'all' || currentChapter === '__no_answer__') return;
+  const chQuestions = QUESTIONS_DATA.filter(q => q.chapter === currentChapter);
+
+  // Score all answered questions in this chapter
+  chQuestions.forEach(q => {
+    const ua = userAnswers[q.id];
+    if (!ua) return;
+    if (!q.answer || q.answer === '') return; // Can't score questions without answers
+
+    if (q.type === 'single') {
+      const userIdx = parseInt(ua.answer);
+      const correctIdx = parseInt(q.answer);
+      ua.status = (userIdx === correctIdx) ? 'correct' : 'incorrect';
+    } else if (q.type === 'multi') {
+      const userSet = new Set((ua.answer || '').split(',').map(x => parseInt(x)).filter(x => !isNaN(x)));
+      const correctSet = new Set((q.answer || '').split(',').map(x => parseInt(x)).filter(x => !isNaN(x)));
+      if (userSet.size === correctSet.size && [...userSet].every(x => correctSet.has(x))) {
+        ua.status = 'correct';
+      } else {
+        ua.status = 'incorrect';
+      }
+    } else if (q.type === 'short' || q.type === 'essay') {
+      ua.status = 'revealed'; // Text answers are manually reviewed
+    }
+    userAnswers[q.id] = ua;
+  });
+
+  submittedChapters[currentChapter] = true;
+  saveProgress();
+  renderQuestions();
+  updateStats();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function unsubmitChapter() {
+  if (currentChapter === 'all' || currentChapter === '__no_answer__') return;
+  delete submittedChapters[currentChapter];
+  // Reset status to 'selected' for all answered questions in this chapter
+  const chQuestions = QUESTIONS_DATA.filter(q => q.chapter === currentChapter);
+  chQuestions.forEach(q => {
+    if (userAnswers[q.id]) {
+      userAnswers[q.id].status = 'selected';
+    }
+  });
+  saveProgress();
+  renderQuestions();
+  updateStats();
+}
+
+function resetAll() {
+  if (!confirm('确定要清除所有答题进度和提交记录吗？此操作不可撤销。')) return;
+  userAnswers = {};
+  submittedChapters = {};
+  saveProgress();
+  renderQuestions();
+  updateStats();
+}
+
+// ========== STATS ==========
+function updateStats() {
+  const total = filteredQuestions.length;
+  let done = 0, correct = 0;
+  filteredQuestions.forEach(q => {
+    const ua = userAnswers[q.id];
+    if (ua && ua.status !== 'selected') done++;
+    if (ua && ua.status === 'correct') correct++;
+  });
+  document.getElementById('statTotal').innerHTML = total + ' <span>道题</span>';
+  document.getElementById('statDone').innerHTML = done + ' <span>已判</span>';
+  document.getElementById('statCorrect').innerHTML = correct + ' <span>正确</span>';
+  const pct = total > 0 ? Math.round(done/total*100) : 0;
+  document.getElementById('statPercent').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ========== MEMO PANEL ==========
+function showMemoPanel() {
+  const panel = document.getElementById('memoPanel');
+  if (panel.classList.contains('show')) { panel.classList.remove('show'); return; }
+  panel.classList.add('show');
+  buildMemoContent();
+  panel.scrollIntoView({behavior:'smooth'});
+}
+
+function buildMemoContent() {
+  const container = document.getElementById('memoContent');
+  let html = '';
+  const total = QUESTIONS_DATA.length;
+  const chMap = {}, typeMap = {};
+  QUESTIONS_DATA.forEach(q => { chMap[q.chapter]=(chMap[q.chapter]||0)+1; typeMap[q.type]=(typeMap[q.type]||0)+1; });
+  html += '<p><strong>题库总题数：</strong>' + total + ' 道（有答案 ' + QUESTIONS_DATA.filter(q=>q.answer&&q.answer!=='').length + ' 道）</p>';
+  html += '<p><strong>题型：</strong>单选 '+(typeMap.single||0)+' | 多选 '+(typeMap.multi||0)+' | 简答 '+(typeMap.short||0)+' | 论述 '+(typeMap.essay||0)+'</p>';
+  html += '<h3>各章题量分布</h3>';
+  Object.entries(chMap).sort((a,b)=>b[1]-a[1]).forEach(([ch,cnt])=>{
+    const pct = ((cnt/total)*100).toFixed(1);
+    const stars = cnt>60?'★★★ 高频':cnt>40?'★★ 中频':'★ 基础';
+    html += '<div class="memo-item'+(cnt>60?' star':'')+'"><strong>'+escHtml(ch)+'</strong>：'+cnt+' 题（'+pct+'%）- '+stars+'</div>';
+  });
+  if (typeof KP_DATA !== 'undefined' && KP_DATA) {
+    html += '<h3>各章核心知识点</h3>';
+    Object.values(KP_DATA).forEach(kp => {
+      html += '<h3>'+escHtml(kp.title)+'</h3>';
+      kp.kp.forEach(item => { html += '<div class="memo-item">'+escHtml(item)+'</div>'; });
+    });
+  }
+  container.innerHTML = html;
+}
+
+// ========== START ==========
+init();
+</script>
+</body>
+</html>

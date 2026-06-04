@@ -1,0 +1,24 @@
+{
+  "name": "习概题库 - 复习系统",
+  "short_name": "习概题库",
+  "description": "习近平新时代中国特色社会主义思想概论题库复习系统",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f3ef",
+  "theme_color": "#c41e1e",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23c41e1e' width='192' height='192' rx='32'/><text x='96' y='118' text-anchor='middle' fill='white' font-size='96' font-weight='bold' font-family='sans-serif'>习</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23c41e1e' width='512' height='512' rx='64'/><text x='256' y='324' text-anchor='middle' fill='white' font-size='280' font-weight='bold' font-family='sans-serif'>习</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
