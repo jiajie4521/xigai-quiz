@@ -236,8 +236,8 @@ body { font-family: var(--font-cn); background: var(--bg); color: var(--text); l
       <option value="unanswered">未答题优先</option>
     </select>
     <button onclick="showMemoPanel()" class="btn btn-outline">背诵知识点</button>
-    <button onclick="exportProgress()" class="btn btn-outline">导出进度</button>
-    <button onclick="importProgress()" class="btn btn-outline">导入进度</button>
+    <button onclick="cloudSave()" class="btn btn-accent" id="btnCloudSave">☁ 云端保存</button>
+    <button onclick="cloudLoad()" class="btn btn-outline" id="btnCloudLoad">☁ 云端加载</button>
     <button onclick="resetAll()" class="btn btn-danger">重置全部进度</button>
   </div>
 
@@ -760,8 +760,144 @@ function importProgress() {
   input.click();
 }
 
+// ========== CLOUD SYNC ==========
+const GIST_ID = 'c6e5fb5f3eb8ac374c3536c00c16fa64';
+const GIST_API = 'https://api.github.com/gists/' + GIST_ID;
+const GIST_RAW = 'https://gist.githubusercontent.com/jiajie4521/' + GIST_ID + '/raw/xigai_progress.json';
+
+function getToken() {
+  return localStorage.getItem('xg_github_token') || '';
+}
+
+// Auto-load cloud progress on page load
+async function autoCloudLoad() {
+  const token = getToken();
+  if (!token) return; // No token configured, skip
+  try {
+    const resp = await fetch(GIST_RAW + '?_=' + Date.now());
+    if (!resp.ok) return;
+    const cloud = await resp.json();
+    if (!cloud || !cloud.userAnswers) return;
+    // Merge: cloud data wins for submitted chapters, local wins for unsaved work
+    const merged = {...userAnswers, ...cloud.userAnswers};
+    userAnswers = merged;
+    submittedChapters = {...submittedChapters, ...(cloud.submittedChapters || {})};
+    saveProgress();
+    renderQuestions();
+    updateStats();
+  } catch(e) {
+    console.log('Cloud load skipped:', e.message);
+  }
+}
+
+async function cloudSave() {
+  const token = getToken();
+  if (!token) {
+    const input = prompt(
+      '首次使用云端同步，请先配置GitHub Token（仅需gist权限）：\n' +
+      '1. 打开 https://github.com/settings/tokens/new?scopes=gist&description=xigai-sync\n' +
+      '2. 点击页面底部的 Generate token\n' +
+      '3. 复制生成的token，粘贴到此处\n\n' +
+      '（此token只保存在你的浏览器本地，不会上传）'
+    );
+    if (!input || !input.trim()) return;
+    localStorage.setItem('xg_github_token', input.trim());
+    alert('Token已保存！正在同步...');
+  }
+
+  const btn = document.getElementById('btnCloudSave');
+  btn.textContent = '☁ 保存中...';
+  btn.disabled = true;
+
+  try {
+    const tok = getToken();
+    const data = JSON.stringify({
+      userAnswers: userAnswers,
+      submittedChapters: submittedChapters,
+      updatedAt: new Date().toISOString()
+    }, null, 2);
+
+    const resp = await fetch(GIST_API, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'token ' + tok,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: { 'xigai_progress.json': { content: data } }
+      })
+    });
+
+    if (resp.ok) {
+      btn.textContent = '☁ 已保存 ✓';
+      setTimeout(() => { btn.textContent = '☁ 云端保存'; btn.disabled = false; }, 2000);
+    } else if (resp.status === 401) {
+      localStorage.removeItem('xg_github_token');
+      btn.textContent = '☁ 云端保存';
+      btn.disabled = false;
+      alert('Token已失效，请重新配置。点击确定后将重新弹出配置窗口。');
+      cloudSave(); // Retry will trigger token prompt
+    } else {
+      throw new Error('HTTP ' + resp.status);
+    }
+  } catch(e) {
+    btn.textContent = '☁ 失败，重试';
+    btn.disabled = false;
+    console.error('Cloud save error:', e);
+  }
+}
+
+async function cloudLoad() {
+  const btn = document.getElementById('btnCloudLoad');
+  btn.textContent = '☁ 加载中...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(GIST_RAW + '?_=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const cloud = await resp.json();
+    if (!cloud || !cloud.userAnswers) {
+      alert('云端暂无数据');
+      btn.textContent = '☁ 云端加载';
+      btn.disabled = false;
+      return;
+    }
+
+    const cloudTime = cloud.updatedAt ? new Date(cloud.updatedAt).toLocaleString() : '未知';
+    if (confirm('发现云端进度（保存时间：' + cloudTime + '），是否用云端数据覆盖本地进度？')) {
+      userAnswers = cloud.userAnswers || {};
+      submittedChapters = cloud.submittedChapters || {};
+      saveProgress();
+      renderQuestions();
+      updateStats();
+      btn.textContent = '☁ 已加载 ✓';
+      setTimeout(() => { btn.textContent = '☁ 云端加载'; btn.disabled = false; }, 2000);
+    } else {
+      btn.textContent = '☁ 云端加载';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    btn.textContent = '☁ 云端加载';
+    btn.disabled = false;
+    alert('加载失败：' + e.message + '\n请检查网络连接');
+  }
+}
+
+// Auto-save to cloud after chapter submit
+const origSubmitChapter = submitChapter;
+submitChapter = function() {
+  origSubmitChapter();
+  // Auto cloud save if token is configured
+  if (getToken()) {
+    setTimeout(cloudSave, 500);
+  }
+};
+
 // ========== START ==========
 init();
+// Auto-load cloud progress
+autoCloudLoad();
 </script>
 </body>
 </html>
