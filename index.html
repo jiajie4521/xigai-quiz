@@ -236,6 +236,8 @@ body { font-family: var(--font-cn); background: var(--bg); color: var(--text); l
       <option value="unanswered">未答题优先</option>
     </select>
     <button onclick="showMemoPanel()" class="btn btn-outline">背诵知识点</button>
+    <button onclick="exportProgress()" class="btn btn-outline">导出进度</button>
+    <button onclick="importProgress()" class="btn btn-outline">导入进度</button>
     <button onclick="resetAll()" class="btn btn-danger">重置全部进度</button>
   </div>
 
@@ -711,6 +713,51 @@ function buildMemoContent() {
     });
   }
   container.innerHTML = html;
+}
+
+// ========== EXPORT / IMPORT PROGRESS ==========
+function exportProgress() {
+  const data = {
+    userAnswers: userAnswers,
+    submittedChapters: submittedChapters,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'xigai_progress_' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importProgress() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.userAnswers) { alert('无效的进度文件'); return; }
+        userAnswers = data.userAnswers;
+        submittedChapters = data.submittedChapters || {};
+        saveProgress();
+        renderQuestions();
+        updateStats();
+        alert('进度已导入成功！');
+      } catch(err) {
+        alert('导入失败：文件格式错误');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 // ========== START ==========
